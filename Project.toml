@@ -11,6 +11,7 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 UnitfulMoles = "999f2bd7-36bf-5ba7-9bc1-c9473aa75374"
 
 [compat]
+FieldMetadata = "0.3"
 julia = "1"
 
 [extras]
