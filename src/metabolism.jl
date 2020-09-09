@@ -1,13 +1,56 @@
-@units @description @with_kw mutable struct PMetabolism{T<:AbstractArray, D<:AbstractArray}
-    y_EM::T = fill(1.0,1)      | mol/mol | "yield of maintenance on reserve"
-    y_EV::T = fill(1.0,1)      | mol/mol | "yield of structure on reserve"
-    y_EX::T = fill(1.0,1)      | mol/mol | "yield of enzyme on reserve"
-    k_E::D  = fill(0.5,1)      | d^-1    | "specific reserve turnover rate"
-    k_M::D  = fill(1.0,1)      | d^-1    | "specific maintenance rate"
-    α::D    = fill(0.0,1)      |           "fraction of growth flux used for enzyme production"
+# abstract type AbstractMetabolism end
+#
+# @units @description @with_kw mutable struct PMetabolism{T<:AbstractArray, D<:AbstractArray} <:AbstractMetabolism
+#     y_EM::T = fill(1.0,1)      | mol/mol | "yield of maintenance on reserve"
+#     y_EV::T = fill(1.0,1)      | mol/mol | "yield of structure on reserve"
+#     y_EX::T = fill(1.0,1)      | mol/mol | "yield of enzyme on reserve"
+#     k_E::D  = fill(0.5,1)      | d^-1    | "specific reserve turnover rate"
+#     k_M::D  = fill(1.0,1)      | d^-1    | "specific maintenance rate"
+#     α::D    = fill(0.0,1)      |           "fraction of growth flux used for enzyme production"
+# end
+abstract type AbstractGenomicData end
+
+@units @description mutable struct PMetabolismCN{T<:AbstractGenomicData, D1<:AbstractArray, D2<:AbstractArray}
+   Isolate::T              | "Isolate defined by BaseGenome"
+   y_EM::D1      | mol/mol | "yield of maintenance on reserve"
+   y_EX::D1      | mol/mol | "yield of enzyme on reserve"
+   y_EV::D1      | mol/mol | "yield of structure on reserve"
+   k_E::D2       | d^-1    | "specific reserve turnover rate"
+   k_M::D2       | d^-1    | "specific maintenance rate"
+   α::D2                   | "fraction of growth flux used for enzyme production"
+
+   function PMetabolismCN{T, D1, D2}(Isolate::T) where {T<:AbstractGenomicData, D1<:AbstractArray, D2<:AbstractArray}
+         y_EV = reserve_yield_constant(genome_size_to_cell_volume(Isolate.L_DNA))
+         y_EM = similar(y_EV)
+         y_EX = similar(y_EV)
+         k_E  = rRNA_copy_number_to_translation_power(Isolate.rRNA)
+         k_M  = cell_volume_to_specific_maintenance_rate(genome_size_to_cell_volume(Isolate.L_DNA))
+         α    = similar(k_M)
+         new(Isolate, y_EM, y_EX, y_EV, k_E, k_M, α)
+     end
 end
 
-function growth!(r0::Array{Float64,1}, E::Array{Float64,1}, V::Array{Float64,1}, p)
+@units @description mutable struct PMetabolismC{T<:AbstractGenomicData, D1<:AbstractArray}
+   Isolate::T              | "Isolate defined by BaseGenome"
+   y_EM::D1      | mol/mol | "yield of maintenance on reserve"
+   y_EX::D1      | mol/mol | "yield of enzyme on reserve"
+   y_EV::D1      | mol/mol | "yield of structure on reserve"
+   k_E::D1       | d^-1    | "specific reserve turnover rate"
+   k_M::D1       | d^-1    | "specific maintenance rate"
+   α::D1                   | "fraction of growth flux used for enzyme production"
+
+   function PMetabolismC{T, D1}(Isolate::T) where {T<:AbstractGenomicData, D1<:AbstractArray}
+         y_EV = metabolic_partitioning(genome_size_to_cell_volume(Isolate.L_DNA))
+         y_EM = similar(y_EV)
+         y_EX = similar(y_EV)
+         k_E  = rRNA_copy_number_to_translation_power(Isolate.rRNA)
+         k_M  = cell_volume_to_specific_maintenance_rate(genome_size_to_cell_volume(Isolate.L_DNA))
+         α    = similar(k_M)
+         new(Isolate, y_EM, y_EX, y_EV, k_E, k_M, α)
+     end
+end
+
+function growth!(r0::Array{Float64,1}, E::Array{Float64,1}, V::Array{Float64,1}, p::PMetabolismC)
    y_VM = p.y_EM./p.y_EV
    #
    function f(r, j)
@@ -25,7 +68,7 @@ function growth!(r0::Array{Float64,1}, E::Array{Float64,1}, V::Array{Float64,1},
    r = Roots.find_zero.(f1, r0)
  end
 
- function growth!(r0::Array{Float64,1}, E::Array{Float64,2}, V::Array{Float64,1}, p)
+ function growth!(r0::Array{Float64,1}, E::Array{Float64,2}, V::Array{Float64,1}, p::PMetabolismCN)
     y_VM = p.y_EM./p.y_EV
     #
     function f(r, j)
@@ -44,7 +87,7 @@ function growth!(r0::Array{Float64,1}, E::Array{Float64,1}, V::Array{Float64,1},
     r = Roots.find_zero.(f1, r0)
   end
 
-function growth_production(r::Array{Float64,1}, E::Array{Float64,1}, V::Array{Float64,1}, p)
+function growth_production(r::Array{Float64,1}, E::Array{Float64,1}, V::Array{Float64,1}, p::PMetabolismC)
    y_VM    = p.y_EM./p.y_EV
    m_E     = @. E/V
    j_EC    = @. m_E*(p.k_E - r)
@@ -62,7 +105,7 @@ function growth_production(r::Array{Float64,1}, E::Array{Float64,1}, V::Array{Fl
 end
 
 
-function growth_production(r::Array{Float64,1}, E::Array{Float64,2}, V::Array{Float64,1}, p)
+function growth_production(r::Array{Float64,1}, E::Array{Float64,2}, V::Array{Float64,1}, p::PMetabolismCN)
   y_VM    = p.y_EM./p.y_EV
   #
   #x = zeros(size(p.y_EM))
@@ -88,4 +131,47 @@ function growth_production(r::Array{Float64,1}, E::Array{Float64,2}, V::Array{Fl
     rE_rej[:,j]  = max.(0.0, (p.k_E - r).* m_E - jEM - p.y_EV[:,j]*(r[j] + sum(jVM)))
   end
   return j_Ex, rG_CO2, rM_CO2, rX_CO2, rE_rej
+end
+
+function cell_volume_to_specific_maintenance_rate(V_c::Array{T,1}) where {T<:Real}
+    # Lynch & Marinov (2015), Eq. 1a
+    n_0 = cell_volume_to_cell_number_density(V_c)
+    V_cell = V_c./1e-18         #  V_cell in μm^3
+    E_M = 0.39*V_cell.^0.88     # [1e9 ATP/(cell h)]
+    E_G = 1e9*E_M/26            # 26 ATP per glucose molecule: [glucose/(cell h)]
+    E_C = E_G*6*24              # [C atoms/(cell/d)]
+    mol_C = E_C/(6.022e23)      # [mol C/(cell d)]
+    k_M = mol_C./n_0            # 1/d
+end
+
+function reserve_yield_constant(V_c::Array{T,1}) where {T<:Real}
+    m_cell = cell_volume_to_dry_mass(V_c)
+    m_baseline = cell_volume_to_dry_mass_baseline(V_c)
+    z = m_baseline./m_cell
+    X_z = [0.43, 0.143]
+    m_growth = cell_volume_to_dry_mass_growth(V_c)
+    g = m_growth./m_cell
+    X_g = [0.37, 0.153]
+    y_EV = zeros(size(X_z,1), size(z,1))
+    for i in 1:size(z,1)
+            y_EV[:,i] = @. g[i]*X_g/(z[i]*X_z)
+    end
+    return y_EV
+end
+
+
+function rRNA_copy_number_to_translation_power(rRNA::Array{T,1}) where {T<:Real}
+    log2_rna = log2.(rRNA)
+    y = @. 0.8 + 0.61*log2_rna
+    fg = y*24 #per day
+end
+
+
+function metabolic_partitioning(V_c::Array{T,1}) where {T<:Real}
+    μ_0 = 4e7
+    β_B = 1.64
+    μ = μ_0*V_c.^(β_B-1)
+    b = 2.42e-6
+    γ = @. 1/(1 + b/μ)
+    return @. 1.0/γ
 end

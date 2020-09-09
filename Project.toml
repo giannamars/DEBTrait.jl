@@ -7,6 +7,7 @@ version = "0.1.0"
 FieldMetadata = "bf96fef3-21d2-5d20-8afa-0e7d4c32a885"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
+Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 UnitfulMoles = "999f2bd7-36bf-5ba7-9bc1-c9473aa75374"
 
