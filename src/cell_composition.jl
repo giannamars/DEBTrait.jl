@@ -71,6 +71,11 @@ function cell_volume_to_envelope_volume(V_c::Array{Float64,1})
     V_env = @. (V_c - 4/3*π*(r_c - r_env).^3)*(1-p_p) # m^3
 end
 
+function genome_size_to_rRNA_copy_number(L_DNA::Array{Float64,1})
+    # Roller et al. (2016) - Supp. Fig. 1
+    rRNA  = @. ceil(2^(L_DNA./1e6 - 2.8)/0.66)
+end
+
 @units @description struct PCellComposition{T<:AbstractGenomicData}
      Isolate::T                   | "Isolate defined by BaseGenome"
      V_cell::Array{Float64,1}  | m^3 | "Total cell volume"

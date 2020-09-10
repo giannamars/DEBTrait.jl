@@ -33,8 +33,8 @@ end
 
 function cosby_Dwpsi(s_sat, psisat, ksat, sat, chb)
     psi, dpsidvsm = cosby_psi(s_sat, psisat, sat, chb)
-    k = cosby_hk(s_sat, k_sat, chb)
-    Dwpsi = hk*!e-3*dpsidvsm*1e-4
+    hk = cosby_hk(s_sat, ksat, chb)
+    Dwpsi = hk*1e-3*dpsidvsm*1e-4
 end
 
 function soil_affinity_properties(pct_sand::Float64, pct_clay::Float64, s_sat::Float64)

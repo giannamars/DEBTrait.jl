@@ -55,21 +55,23 @@ end
 function affinity_constant(ρ_p::Array{Float64,2}, V_c::Array{Float64,1}, D_S::Array{Float64,1}, pct_sand::Float64, pct_clay::Float64, s_sat::Float64, N_cell::Array{Float64,1})
     V_S = 100.0
     N_A = 6.022e23
-    r_m = @. (80.0*V_c*N_cell)^(1/3)
-    v_m = @. 4/3*pi*r_m^3
     ϕ_w, τ_g, τ_w, δ  = soil_affinity_properties(pct_sand, pct_clay, s_sat)
     K_S_0 = specific_reference_affinity(ρ_p, V_c, D_S)
-    k1_s  = @. V_S*ρ_p/K_S_0
+    r_c = (3*V_c/(4*pi)).^(1/3)
+    r_p = 1e-9
+    k1_s  = @. V_S*ρ_p*4*r_c^2/(K_S_0*r_p^2)
+    r_m = @. r_c*(80.0*N_cell)^(1/3)
+    v_m = @. 4/3*pi*r_m^3
+    #
     kapvsi = zeros(size(ρ_p,1), size(ρ_p,2))
     for i in 1:size(ρ_p,2)
         kapvsi[:,i] = @. (δ/(D_S*r_m[i]*(r_m[i]+δ)) + 1/(D_S*τ_w*ϕ_w*(r_m[i]+δ)+1.e-20))*v_m[i]/(4.0*pi)
     end
-
+    #
     K = zeros(size(ρ_p,1), size(ρ_p,2))
     for i in 1:size(ρ_p, 2)
         K[:,i] =  @. K_S_0[:,i]*(1 + (kapvsi[:,i])*k1_s[:,i]*N_cell[i]/(N_A*v_m[i]))
     end
-    #return K
     any(x->x==true, isnan.(K)) ? throw(DomainError("NaN in DEBJulia.ECA_kinetics!"))  : return K
 end
 

@@ -1,13 +1,3 @@
-# abstract type AbstractMetabolism end
-#
-# @units @description @with_kw mutable struct PMetabolism{T<:AbstractArray, D<:AbstractArray} <:AbstractMetabolism
-#     y_EM::T = fill(1.0,1)      | mol/mol | "yield of maintenance on reserve"
-#     y_EV::T = fill(1.0,1)      | mol/mol | "yield of structure on reserve"
-#     y_EX::T = fill(1.0,1)      | mol/mol | "yield of enzyme on reserve"
-#     k_E::D  = fill(0.5,1)      | d^-1    | "specific reserve turnover rate"
-#     k_M::D  = fill(1.0,1)      | d^-1    | "specific maintenance rate"
-#     α::D    = fill(0.0,1)      |           "fraction of growth flux used for enzyme production"
-# end
 abstract type AbstractGenomicData end
 abstract type AbstractMetabolism end
 
