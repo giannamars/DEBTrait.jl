@@ -9,8 +9,9 @@
 #     α::D    = fill(0.0,1)      |           "fraction of growth flux used for enzyme production"
 # end
 abstract type AbstractGenomicData end
+abstract type AbstractMetabolism end
 
-@units @description mutable struct PMetabolismCN{T<:AbstractGenomicData, D1<:AbstractArray, D2<:AbstractArray}
+@units @description mutable struct PMetabolismCN{T<:AbstractGenomicData, D1<:AbstractArray, D2<:AbstractArray} <: AbstractMetabolism
    Isolate::T              | "Isolate defined by BaseGenome"
    y_EM::D1      | mol/mol | "yield of maintenance on reserve"
    y_EX::D1      | mol/mol | "yield of enzyme on reserve"
@@ -30,7 +31,7 @@ abstract type AbstractGenomicData end
      end
 end
 
-@units @description mutable struct PMetabolismC{T<:AbstractGenomicData, D1<:AbstractArray}
+@units @description mutable struct PMetabolismC{T<:AbstractGenomicData, D1<:AbstractArray} <: AbstractMetabolism
    Isolate::T              | "Isolate defined by BaseGenome"
    y_EM::D1      | mol/mol | "yield of maintenance on reserve"
    y_EX::D1      | mol/mol | "yield of enzyme on reserve"
@@ -49,6 +50,7 @@ end
          new(Isolate, y_EM, y_EX, y_EV, k_E, k_M, α)
      end
 end
+
 
 function growth!(r0::Array{Float64,1}, E::Array{Float64,1}, V::Array{Float64,1}, p::PMetabolismC)
    y_VM = p.y_EM./p.y_EV
@@ -133,7 +135,7 @@ function growth_production(r::Array{Float64,1}, E::Array{Float64,2}, V::Array{Fl
   return j_Ex, rG_CO2, rM_CO2, rX_CO2, rE_rej
 end
 
-function cell_volume_to_specific_maintenance_rate(V_c::Array{T,1}) where {T<:Real}
+function cell_volume_to_specific_maintenance_rate(V_c::Array{Float64,1})
     # Lynch & Marinov (2015), Eq. 1a
     n_0 = cell_volume_to_cell_number_density(V_c)
     V_cell = V_c./1e-18         #  V_cell in μm^3
@@ -144,7 +146,7 @@ function cell_volume_to_specific_maintenance_rate(V_c::Array{T,1}) where {T<:Rea
     k_M = mol_C./n_0            # 1/d
 end
 
-function reserve_yield_constant(V_c::Array{T,1}) where {T<:Real}
+function reserve_yield_constant(V_c::Array{Float64,1})
     m_cell = cell_volume_to_dry_mass(V_c)
     m_baseline = cell_volume_to_dry_mass_baseline(V_c)
     z = m_baseline./m_cell
@@ -160,14 +162,14 @@ function reserve_yield_constant(V_c::Array{T,1}) where {T<:Real}
 end
 
 
-function rRNA_copy_number_to_translation_power(rRNA::Array{T,1}) where {T<:Real}
+function rRNA_copy_number_to_translation_power(rRNA::Array{Float64,1})
     log2_rna = log2.(rRNA)
     y = @. 0.8 + 0.61*log2_rna
     fg = y*24 #per day
 end
 
 
-function metabolic_partitioning(V_c::Array{T,1}) where {T<:Real}
+function metabolic_partitioning(V_c::Array{Float64,1})
     μ_0 = 4e7
     β_B = 1.64
     μ = μ_0*V_c.^(β_B-1)

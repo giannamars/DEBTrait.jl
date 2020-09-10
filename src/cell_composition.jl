@@ -1,11 +1,13 @@
 abstract type AbstractGenomicData end
 
 @units @description @with_kw struct BaseGenome <: AbstractGenomicData
-    L_DNA::Array{Real,1} = 1e6*ones(1)  | bp    | "Genome size"
-    rRNA::Array{Real,1} = 10.0*ones(1)          | "rRNA copy number"
+    L_DNA::Array{Float64,1} = 1e6*ones(1)                      | bp    | "Genome size"
+    rRNA::Array{Float64,1} = 10.0*ones(1)                              | "rRNA copy number"
+    min_gentime::Array{Float64,1} = 1.0*ones(1)                | hr    | "Minimum generation time"
+    transporter_distr::Array{Float64,2} = 1.0*ones(6,1)                | "Relative transporter gene frequency in genome"
 end
 
-function genome_size_to_cell_volume(L_DNA::Array{T,1}) where {T<:Real}
+function genome_size_to_cell_volume(L_DNA::Array{Float64,1})
     # Kempes et al. (2016), Eq. 8
     v_N = 1.47e-27
     V_DNA = v_N*L_DNA
@@ -14,14 +16,14 @@ function genome_size_to_cell_volume(L_DNA::Array{T,1}) where {T<:Real}
     V_c = (V_DNA/D_0).^(1/β_D) # m^3
 end
 
-function cell_volume_to_protein_volume(V_c::Array{T,1}) where {T<:Real}
+function cell_volume_to_protein_volume(V_c::Array{Float64,1})
     # Kempes et al. (2016), Eq. 12
     P_0 = 3.42e-7
     β_p = 0.70
     V_p = P_0*V_c.^β_p # m^3
 end
 
-function cell_volume_to_ribosome_volume(V_c::Array{T,1}) where {T<:Real}
+function cell_volume_to_ribosome_volume(V_c::Array{Float64,1})
     # Kempes et al. (2016), Eq. 13
     l_p = 975
     V_p = cell_volume_to_protein_volume(V_c)
@@ -41,7 +43,7 @@ function cell_volume_to_ribosome_volume(V_c::Array{T,1}) where {T<:Real}
     V_r = N_r*v_r # m^3
 end
 
-function cell_volume_to_mRNA_volume(V_c::Array{T,1}) where {T<:Real}
+function cell_volume_to_mRNA_volume(V_c::Array{Float64,1})
     # Kempes et al. (2016), Eq. 18
     V_r = cell_volume_to_ribosome_volume(V_c)
     v_r = 3.04e-24
@@ -51,7 +53,7 @@ function cell_volume_to_mRNA_volume(V_c::Array{T,1}) where {T<:Real}
     V_mRNA = v_mRNA*n_mRNA*N_r # m^3
 end
 
-function cell_volume_to_tRNA_volume(V_c::Array{T,1}) where {T<:Real}
+function cell_volume_to_tRNA_volume(V_c::Array{Float64,1})
     # Kempes et al. (2016), Eq. 17
     V_r = cell_volume_to_ribosome_volume(V_c)
     v_r = 3.04e-24
@@ -61,7 +63,7 @@ function cell_volume_to_tRNA_volume(V_c::Array{T,1}) where {T<:Real}
     V_tRNA = v_tRNA*n_tRNA*N_r # m^3
 end
 
-function cell_volume_to_envelope_volume(V_c::Array{T,1}) where {T<:Real}
+function cell_volume_to_envelope_volume(V_c::Array{Float64,1})
     # Kempes et al. (2016), Eq. 19
     r_c = (3*V_c/(4*π)).^(1/3)
     r_env = 40.5e-9      # 27.5 if gram +
@@ -71,12 +73,12 @@ end
 
 @units @description struct PCellComposition{T<:AbstractGenomicData}
      Isolate::T                   | "Isolate defined by BaseGenome"
-     V_cell::Array{Real,1}  | m^3 | "Total cell volume"
-     V_p::Array{Real,1}     | m^3 | "Protein volume"
-     V_r::Array{Real,1}     | m^3 | "Ribosome volume"
-     V_mRNA::Array{Real,1}  | m^3 | "mRNA volume"
-     V_tRNA::Array{Real,1}  | m^3 | "tRNA volume"
-     V_env::Array{Real,1}   | m^3 | "cell envelope volume"
+     V_cell::Array{Float64,1}  | m^3 | "Total cell volume"
+     V_p::Array{Float64,1}     | m^3 | "Protein volume"
+     V_r::Array{Float64,1}     | m^3 | "Ribosome volume"
+     V_mRNA::Array{Float64,1}  | m^3 | "mRNA volume"
+     V_tRNA::Array{Float64,1}  | m^3 | "tRNA volume"
+     V_env::Array{Float64,1}   | m^3 | "cell envelope volume"
 
      function PCellComposition{T}(Isolate::T) where T<:AbstractGenomicData
          V_cell = genome_size_to_cell_volume(Isolate.L_DNA)
@@ -90,7 +92,7 @@ end
 end
 
 
-function cell_volume_to_dry_mass(V_c::Array{T,1}) where {T<:Real}
+function cell_volume_to_dry_mass(V_c::Array{Float64,1})
     v_0 = 3.0e-17
     β_D = 0.21
     V_DNA = v_0*V_c.^β_D
@@ -107,7 +109,7 @@ function cell_volume_to_dry_mass(V_c::Array{T,1}) where {T<:Real}
     m_d = d_DNA*V_DNA + d_p*V_p + d_r*V_r + d_mem*V_env + d_RNA*V_mRNA + d_RNA*V_tRNA  # g
 end
 
-function cell_volume_to_cell_number_density(V_c::Array{T,1}) where {T<:Real}
+function cell_volume_to_cell_number_density(V_c::Array{Float64,1})
     # assuming 47% of dry mass is C (BNID 100649)
     m_d = cell_volume_to_dry_mass(V_c)
     M_C = 12.0111
@@ -115,7 +117,7 @@ function cell_volume_to_cell_number_density(V_c::Array{T,1}) where {T<:Real}
     λ_B = M_C./(0.47*m_d*N_A)    # mol cells/mol C
 end
 
-function cell_volume_to_dry_mass_baseline(V_c::Array{T,1}) where {T<:Real}
+function cell_volume_to_dry_mass_baseline(V_c::Array{Float64,1})
     v_0 = 3.0e-17
     β_D = 0.21
     V_DNA = v_0*V_c.^β_D
@@ -126,7 +128,7 @@ function cell_volume_to_dry_mass_baseline(V_c::Array{T,1}) where {T<:Real}
 end
 
 
-function cell_volume_to_dry_mass_growth(V_c::Array{T,1}) where {T<:Real}
+function cell_volume_to_dry_mass_growth(V_c::Array{Float64,1})
     V_r = cell_volume_to_ribosome_volume(V_c)
     V_mRNA = cell_volume_to_mRNA_volume(V_c)
     V_tRNA = cell_volume_to_tRNA_volume(V_c)

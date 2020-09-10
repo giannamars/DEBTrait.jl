@@ -6,7 +6,7 @@ Random.seed!(123)
 n_microbes      = 1
 E               = rand(n_microbes)
 V               = rand(n_microbes)
-Isolate         = BaseGenome(1e6*ones(n_microbes), 10*ones(n_microbes))
+Isolate         = BaseGenome(1e6*ones(n_microbes), 10*ones(n_microbes), 1.0*ones(n_microbes), 1.0*ones(1,n_microbes))
 p               = PMetabolismC{BaseGenome, Array{Float64,1}}(Isolate)
 p.y_EM          = fill(1.0, n_microbes)
 p.y_EX          = fill(1.0, n_microbes)
@@ -38,7 +38,7 @@ out             = growth_production(r, E, V, p)
 ################# (2 microbes, 2 reserves)
 n_microbes      = 2
 n_reserves      = 2
-Isolate         = BaseGenome(1e6*ones(n_microbes), 10*ones(n_microbes))
+Isolate         = BaseGenome(1e6*ones(n_microbes), 10*ones(n_microbes), 1.0*ones(n_microbes), 1.0*ones(n_substrates,n_microbes))
 E               = fill(0.5,n_microbes*n_reserves)
 E               = reshape(E, n_reserves, n_microbes)
 V               = fill(1.0, n_microbes)
