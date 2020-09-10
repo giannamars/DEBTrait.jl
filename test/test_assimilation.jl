@@ -30,7 +30,7 @@ n_microbes      = 1
 n_substrates    = 1
 Isolate         = BaseGenome(1e6*ones(n_microbes), 10*ones(n_microbes), 1.0*ones(n_microbes), 1.0*ones(n_substrates,n_microbes))
 Monomer         = BaseMonomer(1e-10*ones(n_substrates), 6*ones(n_substrates), 3*ones(n_substrates), 0.3*ones(n_substrates))
-Soil            = BaseSoil(0.0, 0.0, 1.0, 10*ones(n_microbes))
+Soil            = BaseSoil(0.0, 0.0, 1.0, 1*ones(n_microbes))
 MetabolismC     = PMetabolismC{BaseGenome, Array{Float64,1}}(Isolate)
 MetabolismC.y_EM = ones(n_microbes)
 MetabolismC.y_EX = ones(n_microbes)
@@ -39,7 +39,7 @@ AssimilationC   = PAssimilation(Isolate, Monomer, Soil, MetabolismC)
 @test size(AssimilationC.ρ_p) == (n_substrates, n_microbes)
 @test size(AssimilationC.N_SB) == (n_substrates, n_microbes)
 @test size(AssimilationC.K_D) == (n_substrates, n_microbes)
-@test AssimilationC.K_D_0 ≈ AssimilationC.K_D atol = 1e-8
+@test AssimilationC.K_D_0 ≈ AssimilationC.K_D atol = 1e-4
 Soil.s_sat = 0.05
 AssimilationC   = PAssimilation(Isolate, Monomer, Soil, MetabolismC)
 @test AssimilationC.K_D_0[1] < AssimilationC.K_D[1]
