@@ -14,14 +14,18 @@ using LinearAlgebra
 include("metabolism.jl")
 include("cell_composition.jl")
 include("assimilation.jl")
+include("supeca.jl")
 include("soil_properties.jl")
 include("ThermoStoichWizard.jl")
+include("models.jl")
+
 
 
 export AbstractMetabolism, PMetabolismC, PMetabolismCN, growth!, growth_production
 export AbstractGenomicData, BaseGenome, PCellComposition
 export AbstractMonomer, AbstractAssimilation, BaseMonomer, PAssimilation
 export AbstractSoil, BaseSoil
+export AbstractParameterSpace, SetupBatchC, ParamsBatchC, rhs_BatchC!
 
 
 # Write your package code here.
