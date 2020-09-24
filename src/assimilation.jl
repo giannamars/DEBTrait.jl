@@ -115,7 +115,7 @@ function transporter_density(V_c::Array{Float64,1}, min_gentime::Array{Float64,1
     #
     closure   = zeros(size(genome_distr))
     for i in 1:size(closure,2)
-        closure[:,i] = N_p[i]*genome_distr[:,i]./sum(genome_distr[:,i])
+        closure[:,i] = N_p[i]*genome_distr[:,i]./max(1e-8,sum(genome_distr[:,i]))
     end
     ceil_closure = ceil.(closure)
     ceil_closure[ceil_closure.==0.0].=1e-8

@@ -5,6 +5,7 @@ abstract type AbstractGenomicData end
     rRNA::Array{Float64,1} = 10.0*ones(1)                              | "rRNA copy number"
     min_gentime::Array{Float64,1} = 1.0*ones(1)                | hr    | "Minimum generation time"
     transporter_distr::Array{Float64,2} = 1.0*ones(6,1)                | "Relative transporter gene frequency in genome"
+    enzyme_distr::Array{Float64,1} = 1.0*ones(1)                       | "Relative hydrolase gene frequency in genome"
 end
 
 function genome_size_to_cell_volume(L_DNA::Array{Float64,1})
@@ -73,7 +74,7 @@ end
 
 function genome_size_to_rRNA_copy_number(L_DNA::Array{Float64,1})
     # Roller et al. (2016) - Supp. Fig. 1
-    rRNA  = @. ceil(2^(L_DNA./1e6 - 2.8)/0.66)
+    rRNA  = @. ceil(2^(L_DNA./1e6 - 3.0)/0.66)
 end
 
 @units @description struct PCellComposition{T<:AbstractGenomicData}
@@ -144,10 +145,11 @@ end
 
 
 function reserve_yield_constant(p::PCellComposition)
+    # [molE_C/molV_C,   molE_N/molV_C] 
     m_cell = cell_volume_to_dry_mass(p.V_cell)
     m_baseline = cell_volume_to_dry_mass_baseline(p.V_cell)
     z = m_baseline./m_cell
-    X_z = [0.43, 0.143]
+    X_z = [0.43, 0.43]  # 0.143
     m_growth = cell_volume_to_dry_mass_growth(p.V_cell)
     g = m_growth./m_cell
     X_g = [0.37, 0.153]
